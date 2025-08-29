@@ -7,7 +7,18 @@ from langchain_community.chat_models import ChatOllama
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from dotenv import load_dotenv
 import os
-from agents import generate_itinerary, recommend_activities, fetch_useful_links, weather_forecaster, packing_list_generator, food_culture_recommender, chat_agent
+
+# Import agents
+from agents import (
+    generate_itinerary,
+    recommend_activities,
+    fetch_useful_links,
+    weather_forecaster,
+    packing_list_generator,
+    food_culture_recommender,
+    chat_agent,
+)
+from travel_tools import hotels_finder, cabs_finder, trains_finder  # NEW
 from utils_export import export_to_pdf
 
 # Load environment variables
@@ -41,6 +52,9 @@ class GraphState(TypedDict):
     chat_history: Annotated[list[dict], "List of question-response pairs"]
     user_question: str
     chat_response: str
+    hotels: list[dict]           # NEW
+    cabs: dict                   # NEW
+    trains: list[dict]           # NEW
 
 # ------------------- LangGraph -------------------
 
@@ -64,7 +78,7 @@ graph = workflow.compile()
 
 # ------------------- UI -------------------
 
-st.markdown("# AI-Powered Travel Itinerary Planner")
+st.markdown("# 🧳 AI-Powered Travel Itinerary Planner")
 
 if "state" not in st.session_state:
     st.session_state.state = {
@@ -78,19 +92,31 @@ if "state" not in st.session_state:
         "food_culture_info": "",
         "chat_history": [],
         "user_question": "",
-        "chat_response": ""
+        "chat_response": "",
+        "hotels": [],
+        "cabs": {},
+        "trains": []
     }
 
 with st.form("travel_form"):
     col1, col2 = st.columns(2)
     with col1:
         destination = st.text_input("Destination")
-        month = st.selectbox("Month of Travel", ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+        month = st.selectbox("Month of Travel", [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ])
         duration = st.slider("Number of Days", 1, 30, 7)
         num_people = st.selectbox("Number of People", ["1", "2", "3", "4-6", "7-10", "10+"])
     with col2:
-        holiday_type = st.selectbox("Holiday Type", ["Any", "Party", "Skiing", "Backpacking", "Family", "Beach", "Festival", "Adventure", "City Break", "Romantic", "Cruise"])
-        budget_type = st.selectbox("Budget Type", ["Budget", "Mid-Range", "Luxury", "Backpacker", "Family"])
+        holiday_type = st.selectbox("Holiday Type", [
+            "Any", "Party", "Skiing", "Backpacking", "Family",
+            "Beach", "Festival", "Adventure", "City Break",
+            "Romantic", "Cruise"
+        ])
+        budget_type = st.selectbox("Budget Type", [
+            "Budget", "Mid-Range", "Luxury", "Backpacker", "Family"
+        ])
         comments = st.text_area("Additional Comments")
     submit_btn = st.form_submit_button("Generate Itinerary")
 
@@ -103,7 +129,7 @@ if submit_btn:
         "num_people": num_people,
         "holiday_type": holiday_type,
         "budget_type": budget_type,
-        "comments": comments
+        "comments": comments,
     }
     st.session_state.state.update({
         "preferences_text": preferences_text,
@@ -115,94 +141,129 @@ if submit_btn:
         "useful_links": [],
         "weather_forecast": "",
         "packing_list": "",
-        "food_culture_info": ""
+        "food_culture_info": "",
+        "hotels": [],
+        "cabs": {},
+        "trains": []
     })
     with st.spinner("Generating itinerary..."):
         result = graph.invoke(st.session_state.state)
         st.session_state.state.update(result)
         if result.get("itinerary"):
-            st.success("Itinerary Created")
+            st.success("Itinerary Created ✅")
         else:
-            st.error("Failed to generate itinerary.")
+            st.error("Failed to generate itinerary ❌")
 
 # Layout
 if st.session_state.state.get("itinerary"):
     col_itin, col_chat = st.columns([3, 2])
 
     with col_itin:
-        st.markdown("### Travel Itinerary")
+        st.markdown("### 📍 Travel Itinerary")
         st.markdown(st.session_state.state["itinerary"])
 
-        # All agent buttons in one row
-        col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
-        with col_btn1:
-            if st.button("Get Activity Suggestions"):
-                with st.spinner("Fetching activity suggestions..."):
+        # Agent buttons
+        col_btns = st.columns(8)
+        with col_btns[0]:
+            if st.button("Activities"):
+                with st.spinner("Fetching activities..."):
                     result = recommend_activities.recommend_activities(st.session_state.state)
                     st.session_state.state.update(result)
-        with col_btn2:
-            if st.button("Get Useful Links"):
-                with st.spinner("Fetching useful links..."):
+        with col_btns[1]:
+            if st.button("Links"):
+                with st.spinner("Fetching links..."):
                     result = fetch_useful_links.fetch_useful_links(st.session_state.state)
                     st.session_state.state.update(result)
-        with col_btn3:
-            if st.button("Get Weather Forecast"):
-                with st.spinner("Fetching weather forecast..."):
+        with col_btns[2]:
+            if st.button("Weather"):
+                with st.spinner("Fetching weather..."):
                     result = weather_forecaster.weather_forecaster(st.session_state.state)
                     st.session_state.state.update(result)
-        with col_btn4:
-            if st.button("Get Packing List"):
+        with col_btns[3]:
+            if st.button("Packing"):
                 with st.spinner("Generating packing list..."):
                     result = packing_list_generator.packing_list_generator(st.session_state.state)
                     st.session_state.state.update(result)
-        with col_btn5:
-            if st.button("Get Food & Culture Info"):
-                with st.spinner("Fetching food and culture info..."):
+        with col_btns[4]:
+            if st.button("Food & Culture"):
+                with st.spinner("Fetching food & culture..."):
                     result = food_culture_recommender.food_culture_recommender(st.session_state.state)
                     st.session_state.state.update(result)
+        with col_btns[5]:
+            if st.button("Hotels"):
+                with st.spinner("Finding hotels..."):
+                    result = {"hotels": hotels_finder.invoke({
+                        "params": {
+                            "q": destination,
+                            "check_in_date": "2024-06-22",
+                            "check_out_date": "2024-06-28"
+                        }
+                    })}
+                    st.session_state.state.update(result)
+        with col_btns[6]:
+            if st.button("Cabs"):
+                with st.spinner("Finding cabs..."):
+                    result = {"cabs": cabs_finder.invoke({
+                        "params": {"origin": "Mumbai Airport", "destination": destination}
+                    })}
+                    st.session_state.state.update(result)
+        with col_btns[7]:
+            if st.button("Trains"):
+                with st.spinner("Finding trains..."):
+                    result = {"trains": trains_finder.invoke({
+                        "params": {"origin": "Mumbai CST", "destination": destination}
+                    })}
+                    st.session_state.state.update(result)
 
-        # Display all agent outputs in expanders
+        # Expanders
         if st.session_state.state.get("activity_suggestions"):
-            with st.expander("🎯 Activity Suggestions", expanded=False):
+            with st.expander("🎯 Activities", expanded=False):
                 st.markdown(st.session_state.state["activity_suggestions"])
-
         if st.session_state.state.get("useful_links"):
             with st.expander("🔗 Useful Links", expanded=False):
                 for link in st.session_state.state["useful_links"]:
                     st.markdown(f"- [{link['title']}]({link['link']})")
-
         if st.session_state.state.get("weather_forecast"):
-            with st.expander("🌤️ Weather Forecast", expanded=False):
+            with st.expander("🌤 Weather", expanded=False):
                 st.markdown(st.session_state.state["weather_forecast"])
-
         if st.session_state.state.get("packing_list"):
             with st.expander("🎒 Packing List", expanded=False):
                 st.markdown(st.session_state.state["packing_list"])
-
         if st.session_state.state.get("food_culture_info"):
-            with st.expander("🍽️ Food & Culture Info", expanded=False):
+            with st.expander("🍽 Food & Culture", expanded=False):
                 st.markdown(st.session_state.state["food_culture_info"])
+        if st.session_state.state.get("hotels"):
+            with st.expander("🏨 Hotels", expanded=False):
+                for h in st.session_state.state["hotels"]:
+                    st.markdown(f"**{h.get('name','N/A')}** - {h.get('rate_per_night','N/A')} {h.get('currency','')}")
+        if st.session_state.state.get("cabs"):
+            with st.expander("🚖 Cabs", expanded=False):
+                st.json(st.session_state.state["cabs"])
+        if st.session_state.state.get("trains"):
+            with st.expander("🚆 Trains", expanded=False):
+                st.json(st.session_state.state["trains"])
 
-        # Export PDF button
+        # Export PDF
         if st.button("Export as PDF"):
             pdf_path = export_to_pdf(st.session_state.state["itinerary"])
             if pdf_path:
                 with open(pdf_path, "rb") as f:
-                    st.download_button("Download Itinerary PDF", f, file_name="itinerary.pdf")
+                    st.download_button("⬇ Download Itinerary PDF", f, file_name="itinerary.pdf")
 
+    # Chat
     with col_chat:
-        st.markdown("### Chat About Your Itinerary")
+        st.markdown("### 💬 Chat About Your Trip")
         for chat in st.session_state.state["chat_history"]:
             with st.chat_message("user"):
                 st.markdown(chat["question"])
             with st.chat_message("assistant"):
                 st.markdown(chat["response"])
 
-        if user_input := st.chat_input("Ask something about your itinerary"):
+        if user_input := st.chat_input("Ask about your itinerary..."):
             st.session_state.state["user_question"] = user_input
-            with st.spinner("Generating response..."):
+            with st.spinner("Thinking..."):
                 result = chat_agent.chat_node(st.session_state.state)
                 st.session_state.state.update(result)
                 st.rerun()
 else:
-    st.info("Fill the form and generate an itinerary to begin.")
+    st.info("👆 Fill the form and generate an itinerary to begin.")
