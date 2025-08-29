@@ -35,7 +35,7 @@ Plan itineraries, find hotels, book cabs, check local trains, explore tourist sp
 
 ```bash
 # Clone repo
-git clone https://github.com/your-username/ai-travel-planner.git
+git clone https://github.com/harsh kumare/ai-travel-planner.git
 cd ai-travel-planner
 
 # Create environment
