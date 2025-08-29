@@ -1,72 +1,119 @@
-# 🌍 AI Travel Assistance Model
+# 🧳 AI Travel Planner 
 
-This repository contains the **AI model** for travel assistance.  
-The model provides intelligent recommendations for destinations, itineraries, hotels, and general travel queries.
+An AI-powered **Travel Planning Assistant** built with **Streamlit**, **LangGraph**, and **LangChain Agents**.  
+Plan itineraries, find hotels, book cabs, check local trains, explore tourist spots, get weather forecasts, packing lists, food & culture info — all in one place 🚀.
 
 ---
 
 ## ✨ Features
-- 🗺️ Recommends destinations based on user preferences (budget, weather, interests).  
-- 🏨 Suggests hotels, restaurants, and transport options.  
-- 🚌 Generates optimized travel itineraries.  
-- 💬 Answers general travel-related questions.  
+
+- 📅 **Itinerary Generator** — AI-powered travel plan based on preferences (destination, budget, type, duration).  
+- 🏨 **Hotels Agent** — fetches hotel options via Google Hotels (SerpAPI).  
+- 🚖 **Cabs Agent** — helps with local cab booking search.  
+- 🚆 **Local Trains Agent** — shows metro/local train info for Mumbai.  
+- 🗺 **Tourist Spots Agent** — discovers top attractions at your destination.  
+- 🌤 **Weather Forecast Agent** — provides destination weather.  
+- 🎒 **Packing List Agent** — generates a checklist based on trip type & weather.  
+- 🍽 **Food & Culture Agent** — highlights local cuisines & cultural experiences.  
+- 💬 **Chat Agent** — ask follow-up questions about your trip.  
+- 📄 **Export to PDF** — download your generated itinerary.
 
 ---
 
-## 📂 Project Structure
-ai-travel-assistance-model/
-│── data/ # Datasets used for training/testing
-│── notebooks/ # Jupyter notebooks for experimentation
-│── models/ # Trained models and checkpoints
-│── scripts/ # Training and inference scripts
-│── requirements.txt # Python dependencies
-│── README.md # Project overview
+## 🛠 Tech Stack
+
+- [Streamlit](https://streamlit.io/) – UI framework  
+- [LangChain](https://www.langchain.com/) + [LangGraph](https://langchain-ai.github.io/langgraph/) – multi-agent workflow  
+- [ChatOllama](https://ollama.com/) – Local LLM (Llama3)  
+- [Google Serper API](https://serper.dev/) – for search & tourist spots  
+- [SerpAPI](https://serpapi.com/) – for hotels API  
+- [dotenv](https://pypi.org/project/python-dotenv/) – environment management  
 
 ---
 
-## ⚡ Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/harshkumare /ai-travel-assistance-model.git
-   cd ai-travel-assistance-model
-   pip install -r requirements.txt
-python scripts/inference.py --query "Suggest me a 5-day budget trip in Mumbai"
+## 📦 Installation
 
-Example Output:
+```bash
+# Clone repo
+git clone https://github.com/your-username/ai-travel-planner.git
+cd ai-travel-planner
 
-Destination: Mumbai, India
+# Create environment
+python -m venv venv
+source venv/bin/activate   # (Linux/Mac)
+venv\Scripts\activate      # (Windows)
 
-Suggested 2-Day Itinerary:
-Day 1:
-- Morning: Gateway of India & boat ride to Elephanta Caves
-- Afternoon: Lunch at Leopold Café, visit Colaba Causeway Market
-- Evening: Marine Drive sunset & Chowpatty snacks
+# Install dependencies
+pip install -r requirements.txt
+🔑 Environment Variables
+Create a .env file in the project root:
 
-Day 2:
-- Morning: Siddhivinayak Temple & Haji Ali Dargah
-- Afternoon: Lunch at Bademiya (famous kebabs)
-- Evening: Bandra-Worli Sea Link + explore Bandra cafés
-🛠️ Model Details
-Architecture: Transformer-based (GPT / BERT fine-tuned on travel data)
+ini
+Copy code
+# For Hotels Agent
+SERPAPI_API_KEY=your_serpapi_key
 
-Training Data: Mumbai tourism datasets + curated guides + online travel blogs
+# For Tourist Spots Agent
+SERPER_API_KEY=your_serper_key
 
-Frameworks: PyTorch / HuggingFace Transformers
+# For Ollama LLM
+# Ensure Ollama is running locally with llama3 model pulled
+🚀 Run the App
+bash
+Copy code
+streamlit run app.py
+Then open: http://localhost:8501
 
-Capabilities:
+📖 Usage
+Fill out the form with destination, travel dates, duration, budget, etc.
 
-Natural language Q&A about Mumbai
+Click Generate Itinerary → AI builds your base plan.
 
-Personalized recommendations
+Use buttons to fetch:
 
-Budget-based itinerary generation
+🏨 Hotels
 
-🔮 Future Work
-🏨 Hotel & stay recommendation system
+🚖 Cabs
 
-🚊 Real-time local train & metro guidance
+🚆 Trains
 
-🌐 Multilingual support (Marathi, Hindi, English)
+🗺 Tourist Spots
 
-🎭 Event-based suggestions (festivals, concerts, cricket matches)
+🌤 Weather
 
+🎒 Packing List
+
+🍽 Food & Culture
+
+Ask trip-specific questions via the chat sidebar.
+
+Export your trip plan as a PDF.
+
+📂 Project Structure
+graphql
+Copy code
+ai-travel-planner/
+│── app.py                  # Main Streamlit app
+│── agents/                 # Multi-agent modules
+│   ├── generate_itinerary.py
+│   ├── recommend_activities.py
+│   ├── fetch_useful_links.py
+│   ├── weather_forecaster.py
+│   ├── packing_list_generator.py
+│   ├── food_culture_recommender.py
+│   ├── chat_agent.py
+│   ├── hotels_finder.py
+│   ├── cabs_finder.py
+│   ├── trains_finder.py
+│   └── tourist_spots.py    # NEW Tourist Spots Agent
+│── utils_export.py          # PDF export logic
+│── requirements.txt
+│── README.md
+🛤 Roadmap
+🔗 Integrate live cab APIs (Uber/Ola)
+
+🚆 Real-time Mumbai local train timings
+
+🗓 Add calendar export (Google/Outlook)
+
+🌍 Multi-language support
